@@ -91,7 +91,6 @@ DoBattle:
 	call BreakAttraction
 	call SendOutPlayerMon
 	call EmptyBattleTextbox
-	call GetTimeOfDayImage
 	call LoadTilemapToTempTilemap
 	call SetPlayerTurn
 	call SpikesDamage
@@ -148,6 +147,7 @@ WildFled_EnemyFled_LinkBattleCanceled:
 	call CheckMobileBattleError
 	jr c, .skip_sfx
 
+; BUG: SFX_RUN does not play correctly when a wild Pokémon flees from battle (see docs/bugs_and_glitches.md)
 	ld de, SFX_RUN
 	call PlaySFX
 
@@ -197,9 +197,6 @@ BattleTurn:
 	jr nz, .quit
 .skip_iteration
 	call ParsePlayerAction
-	push af
-	call ClearSprites
-	pop af
 	jr nz, .loop1
 
 	call EnemyTriesToFlee
@@ -260,7 +257,6 @@ HandleBetweenTurnEffects:
 	call CheckFaint_PlayerThenEnemy
 	ret c
 	call HandleWeather
-	farcall _CGB_BattleColors
 	call CheckFaint_PlayerThenEnemy
 	ret c
 	call HandleWrap
@@ -278,7 +274,6 @@ HandleBetweenTurnEffects:
 	call CheckFaint_EnemyThenPlayer
 	ret c
 	call HandleWeather
-	farcall _CGB_BattleColors
 	call CheckFaint_EnemyThenPlayer
 	ret c
 	call HandleWrap
@@ -300,20 +295,8 @@ HandleBetweenTurnEffects:
 	call LoadTilemapToTempTilemap
 	jp HandleEncore
 
-HasAnyoneFainted:
-	call HasPlayerFainted
-	jp nz, HasEnemyFainted
-	ret
-
 CheckFaint_PlayerThenEnemy:
-.faint_loop
-	call .Function
-	ret c
-	call HasAnyoneFainted
-	ret nz
-	jr .faint_loop
-
-.Function:
+; BUG: Perish Song and Spikes can leave a Pokemon with 0 HP and not faint (see docs/bugs_and_glitches.md)
 	call HasPlayerFainted
 	jr nz, .PlayerNotFainted
 	call HandlePlayerMonFaint
@@ -338,14 +321,7 @@ CheckFaint_PlayerThenEnemy:
 	ret
 
 CheckFaint_EnemyThenPlayer:
-.faint_loop
-	call .Function
-	ret c
-	call HasAnyoneFainted
-	ret nz
-	jr .faint_loop
-
-.Function:
+; BUG: Perish Song and Spikes can leave a Pokemon with 0 HP and not faint (see docs/bugs_and_glitches.md)
 	call HasEnemyFainted
 	jr nz, .EnemyNotFainted
 	call HandleEnemyMonFaint
@@ -414,20 +390,11 @@ HandleBerserkGene:
 	call GetPartyLocation
 	xor a
 	ld [hl], a
+; BUG: Berserk Gene's confusion lasts for 256 turns or the previous Pokémon's confusion count (see docs/bugs_and_glitches.md)
 	ld a, BATTLE_VARS_SUBSTATUS3
 	call GetBattleVarAddr
 	push af
 	set SUBSTATUS_CONFUSED, [hl]
-	ldh a, [hBattleTurn]
-	and a
-	ld hl, wPlayerConfuseCount
-	jr z, .set_confuse_count
-	ld hl, wEnemyConfuseCount
-.set_confuse_count
-	call BattleRandom
-	and %11
-	add 2
-	ld [hl], a
 	ld a, BATTLE_VARS_MOVE_ANIM
 	call GetBattleVarAddr
 	push hl
@@ -1721,27 +1688,14 @@ HandleWeather:
 
 	ld hl, wWeatherCount
 	dec [hl]
-	jr z, .continues
+	jr z, .ended
 
-
-; ended
-	ld hl, .WeatherEndedMessages
-	call .PrintWeatherMessage
-	xor a
-	ld [wBattleWeather], a
-	ret
-
-	farcall _CGB_BattleColors
-	ld a, 1
-	ld [hCGBPalUpdate], a
-
-.continues
 	ld hl, .WeatherMessages
 	call .PrintWeatherMessage
 
 	ld a, [wBattleWeather]
 	cp WEATHER_SANDSTORM
-	jr nz, .check_hail
+	ret nz
 
 	ldh a, [hSerialConnectionStatus]
 	cp USING_EXTERNAL_CLOCK
@@ -1798,52 +1752,12 @@ HandleWeather:
 	ld hl, SandstormHitsText
 	jp StdBattleTextbox
 
-.check_hail
-	ld a, [wBattleWeather]
-	cp WEATHER_HAIL
-	ret nz
-
-	ldh a, [hSerialConnectionStatus]
-	cp USING_EXTERNAL_CLOCK
-	jr z, .enemy_first_hail
-
-; player first
-	call SetPlayerTurn
-	call .HailDamage
-	call SetEnemyTurn
-	jr .HailDamage
-
-.enemy_first_hail
-	call SetEnemyTurn
-	call .HailDamage
-	call SetPlayerTurn
-
-.HailDamage:
-	ld a, BATTLE_VARS_SUBSTATUS3
-	call GetBattleVar
-	bit SUBSTATUS_UNDERGROUND, a
-	ret nz
-
-	ld hl, wBattleMonType1
-	ldh a, [hBattleTurn]
-	and a
-	jr z, .ok1
-	ld hl, wEnemyMonType1
-.ok1
-	ld a, [hli]
-	cp ICE
-	ret z
-
-	ld a, [hl]
-	cp ICE
-	ret z
-
-	call GetSixteenthMaxHP
-	call SubtractHPFromUser
-
-	ld hl, PeltedByHailText
-	jp StdBattleTextbox
-
+.ended
+	ld hl, .WeatherEndedMessages
+	call .PrintWeatherMessage
+	xor a
+	ld [wBattleWeather], a
+	ret
 
 .PrintWeatherMessage:
 	ld a, [wBattleWeather]
@@ -1862,14 +1776,12 @@ HandleWeather:
 	dw BattleText_RainContinuesToFall
 	dw BattleText_TheSunlightIsStrong
 	dw BattleText_TheSandstormRages
-	dw BattleText_HailContinuesToFall
 
 .WeatherEndedMessages:
 ; entries correspond to WEATHER_* constants
 	dw BattleText_TheRainStopped
 	dw BattleText_TheSunlightFaded
 	dw BattleText_TheSandstormSubsided
-	dw BattleText_TheHailStopped
 
 SubtractHPFromTarget:
 	call SubtractHP
@@ -2238,28 +2150,95 @@ UpdateBattleStateAndExperienceAfterEnemyFaint:
 	ld a, [wBattleResult]
 	and BATTLERESULT_BITMASK
 	ld [wBattleResult], a ; WIN
-	; fallthrough
-ApplyExperienceAfterEnemyCaught:
-	; Preserve bits of non-fainted participants
-	ld a, [wBattleParticipantsNotFainted]
-	ld d, a
-	push de
-	call GiveExperiencePoints
-	pop de
-	; If Exp. Share is ON, give 50% EXP to non-participants
-	ld a, [wExpShareToggle]
-	and a
-	ret z
-	ld hl, wEnemyMonBaseExp
+	call IsAnyMonHoldingExpShare
+	jr z, .skip_exp
+	ld hl, wEnemyMonBaseStats
+	ld b, wEnemyMonEnd - wEnemyMonBaseStats
+.loop
 	srl [hl]
+	inc hl
+	dec b
+	jr nz, .loop
+
+.skip_exp
+	ld hl, wEnemyMonBaseStats
+	ld de, wBackupEnemyMonBaseStats
+	ld bc, wEnemyMonEnd - wEnemyMonBaseStats
+	call CopyBytes
+	xor a
+	ld [wGivingExperienceToExpShareHolders], a
+	call GiveExperiencePoints
+	call IsAnyMonHoldingExpShare
+	ret z
+
 	ld a, [wBattleParticipantsNotFainted]
 	push af
 	ld a, d
-	xor %00111111
 	ld [wBattleParticipantsNotFainted], a
+	ld hl, wBackupEnemyMonBaseStats
+	ld de, wEnemyMonBaseStats
+	ld bc, wEnemyMonEnd - wEnemyMonBaseStats
+	call CopyBytes
+	ld a, $1
+	ld [wGivingExperienceToExpShareHolders], a
 	call GiveExperiencePoints
 	pop af
 	ld [wBattleParticipantsNotFainted], a
+	ret
+
+IsAnyMonHoldingExpShare:
+	ld a, [wPartyCount]
+	ld b, a
+	ld hl, wPartyMon1
+	ld c, 1
+	ld d, 0
+.loop
+	push hl
+	push bc
+	ld bc, MON_HP
+	add hl, bc
+	ld a, [hli]
+	or [hl]
+	pop bc
+	pop hl
+	jr z, .next
+
+	push hl
+	push bc
+	ld bc, MON_ITEM
+	add hl, bc
+	pop bc
+	ld a, [hl]
+	pop hl
+
+	cp EXP_SHARE
+	jr nz, .next
+	ld a, d
+	or c
+	ld d, a
+
+.next
+	sla c
+	push de
+	ld de, PARTYMON_STRUCT_LENGTH
+	add hl, de
+	pop de
+	dec b
+	jr nz, .loop
+
+	ld a, d
+	ld e, 0
+	ld b, PARTY_LENGTH
+.loop2
+	srl a
+	jr nc, .okay
+	inc e
+
+.okay
+	dec b
+	jr nz, .loop2
+	ld a, e
+	and a
 	ret
 
 StopDangerSound:
@@ -2375,11 +2354,7 @@ WinTrainerBattle:
 	ld a, b
 	call z, PlayVictoryMusic
 	callfar Battle_GetTrainerName
-	ld hl, BattleText_PluralEnemyWereDefeated
-	call IsPluralTrainer
-	jr z, .got_defeat_phrase
 	ld hl, BattleText_EnemyWasDefeated
-.got_defeat_phrase:
 	call StdBattleTextbox
 
 	call IsMobileBattle
@@ -2582,6 +2557,10 @@ PlayVictoryMusic:
 	ld a, [wBattleMode]
 	dec a
 	jr nz, .trainer_victory
+	push de
+	call IsAnyMonHoldingExpShare
+	pop de
+	jr nz, .play_music
 	ld hl, wPayDayMoney
 	ld a, [hli]
 	or [hl]
@@ -2619,12 +2598,6 @@ IsGymLeaderCommon:
 	ret
 
 INCLUDE "data/trainers/leaders.asm"
-
-IsPluralTrainer:
-; return z for plural trainers
-	ld a, [wOtherTrainerClass]
-	cp TWINS
-	ret
 
 HandlePlayerMonFaint:
 	call FaintYourPokemon
@@ -2772,7 +2745,7 @@ ForcePlayerMonChoice:
 	call LoadTilemapToTempTilemap
 	call WaitBGMap
 	call GetMemSGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	xor a
 	ld c, a
 	ret
@@ -2791,7 +2764,7 @@ ForcePlayerMonChoice:
 	call _LoadHPBar
 	call CloseWindow
 	call GetMemSGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	call SendOutMonText
 	call NewBattleMonStatus
 	call BreakAttraction
@@ -2855,9 +2828,9 @@ SetUpBattlePartyMenu_Loop: ; switch to fullscreen menu?
 
 JumpToPartyMenuAndPrintText:
 	farcall WritePartyMenuTilemap
-	farcall PrintPartyMenuText
+	farcall PlacePartyMenuText
 	call WaitBGMap
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	call DelayFrame
 	ret
 
@@ -2988,7 +2961,7 @@ LostBattle:
 ; Grayscale
 	ld b, SCGB_BATTLE_GRAYSCALE
 	call GetSGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	jr .end
 
 .LostLinkBattle:
@@ -3515,11 +3488,7 @@ OfferSwitch:
 	ld a, [wCurPartyMon]
 	push af
 	callfar Battle_GetTrainerName
-	ld hl, BattleText_PluralEnemyAreAboutToUseWillPlayerChangeMon
-	call IsPluralTrainer
-	jr z, .got_switch_phrase
 	ld hl, BattleText_EnemyIsAboutToUseWillPlayerChangeMon
-.got_switch_phrase:
 	call StdBattleTextbox
 	lb bc, 1, 7
 	call PlaceYesNoBox
@@ -3928,6 +3897,7 @@ InitBattleMon:
 	ld bc, PARTYMON_STRUCT_LENGTH - MON_ATK
 	call CopyBytes
 	call ApplyStatusEffectOnPlayerStats
+	call BadgeStatBoosts
 	ret
 
 BattleCheckPlayerShininess:
@@ -4904,7 +4874,6 @@ BattleMenu:
 	xor a
 	ldh [hBGMapMode], a
 	call LoadTempTilemapToTilemap
-	call GetTimeOfDayImage
 
 	ld a, [wBattleType]
 	cp BATTLETYPE_DEBUG
@@ -4949,7 +4918,6 @@ BattleMenu:
 	jr .loop
 
 BattleMenu_Fight:
-	call ClearSprites
 	xor a
 	ld [wNumFleeAttempts], a
 	call SafeLoadTempTilemapToTilemap
@@ -5012,7 +4980,6 @@ BattleMenu_Pack:
 	jr .got_item
 
 .contest
-	call ClearSprites
 	ld a, PARK_BALL
 	ld [wCurItem], a
 	call DoItemEffect
@@ -5031,7 +4998,6 @@ BattleMenu_Pack:
 	call WaitBGMap
 	call FinishBattleAnim
 	call LoadTilemapToTempTilemap
-	call GetTimeOfDayImage
 	jp BattleMenu
 
 .ItemsCantBeUsed:
@@ -5079,7 +5045,7 @@ BattleMenu_Pack:
 	and BATTLERESULT_BITMASK
 	ld [wBattleResult], a ; WIN
 	call ClearWindowData
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	scf
 	ret
 
@@ -5129,8 +5095,7 @@ BattleMenuPKMN_Loop:
 	call CloseWindow
 	call LoadTilemapToTempTilemap
 	call GetMemSGBLayout
-	call SetPalettes
-	call GetTimeOfDayImage
+	call SetDefaultBGPAndOBP
 	jp BattleMenu
 
 .GetMenu:
@@ -5216,7 +5181,7 @@ TryPlayerSwitch:
 	call _LoadHPBar
 	call CloseWindow
 	call GetMemSGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	ld a, [wCurPartyMon]
 	ld [wCurBattleMon], a
 PlayerSwitch:
@@ -5469,7 +5434,6 @@ MoveSelectionScreen:
 
 .battle_player_moves
 	call MoveInfoBox
-	call GetWeatherImage
 	ld a, [wSwappingMove]
 	and a
 	jr z, .interpret_joypad
@@ -5722,18 +5686,15 @@ MoveInfoBox:
 	and PP_MASK
 	ld [wStringBuffer1], a
 	call .PrintPP
-	farcall UpdateMoveData
-	ld a, [wPlayerMoveStruct + MOVE_ANIM]
-	ld b, a
-	farcall GetMoveCategoryName
+
 	hlcoord 1, 9
-	ld de, wStringBuffer1
+	ld de, .Type
 	call PlaceString
 
-	ld h, b
-	ld l, c
+	hlcoord 7, 11
 	ld [hl], "/"
 
+	callfar UpdateMoveData
 	ld a, [wPlayerMoveStruct + MOVE_ANIM]
 	ld b, a
 	hlcoord 2, 10
@@ -5744,6 +5705,8 @@ MoveInfoBox:
 
 .Disabled:
 	db "Disabled!@"
+.Type:
+	db "TYPE/@"
 
 .PrintPP:
 	hlcoord 5, 11
@@ -6250,12 +6213,7 @@ LoadEnemyMon:
 
 .Happiness:
 ; Set happiness
-	ld a, [wBattleMode]
-	dec a
-	ld a, $ff ; Give the enemy mon max happiness...
-	jr nz, .load_happiness ; ...if it's a Trainer battle.
 	ld a, BASE_HAPPINESS
-.load_happiness
 	ld [wEnemyMonHappiness], a
 ; Set level
 	ld a, [wCurPartyLevel]
@@ -6447,7 +6405,7 @@ LoadEnemyMon:
 
 	ld hl, wEnemyMonStats
 	ld de, wEnemyStats
-	ld bc, NUM_EXP_STATS * 2
+	ld bc, NUM_BATTLE_STATS * 2
 	call CopyBytes
 
 ; BUG: PRZ and BRN stat reductions don't apply to switched Pokémon (see docs/bugs_and_glitches.md)
@@ -6798,6 +6756,95 @@ ApplyStatLevelMultiplier:
 
 INCLUDE "data/battle/stat_multipliers_2.asm"
 
+BadgeStatBoosts:
+; Raise the stats of the battle mon in wBattleMon
+; depending on which badges have been obtained.
+
+; Every other badge boosts a stat, starting from the first.
+; GlacierBadge also boosts Special Defense, although the relevant code is buggy (see below).
+
+; 	ZephyrBadge:  Attack
+; 	PlainBadge:   Speed
+; 	MineralBadge: Defense
+; 	GlacierBadge: Special Attack and Special Defense
+
+; The boosted stats are in order, except PlainBadge and MineralBadge's boosts are swapped.
+
+	ld a, [wLinkMode]
+	and a
+	ret nz
+
+	ld a, [wInBattleTowerBattle]
+	and a
+	ret nz
+
+	ld a, [wJohtoBadges]
+
+; Swap badges 3 (PlainBadge) and 5 (MineralBadge).
+	ld d, a
+	and (1 << PLAINBADGE)
+	add a
+	add a
+	ld b, a
+	ld a, d
+	and (1 << MINERALBADGE)
+	rrca
+	rrca
+	ld c, a
+	ld a, d
+	and ((1 << ZEPHYRBADGE) | (1 << HIVEBADGE) | (1 << FOGBADGE) | (1 << STORMBADGE) | (1 << GLACIERBADGE) | (1 << RISINGBADGE))
+	or b
+	or c
+	ld b, a
+
+	ld hl, wBattleMonAttack
+	ld c, 4
+.CheckBadge:
+; BUG: Glacier Badge may not boost Special Defense depending on the value of Special Attack (see docs/bugs_and_glitches.md)
+	ld a, b
+	srl b
+	call c, BoostStat
+	inc hl
+	inc hl
+; Check every other badge.
+	srl b
+	dec c
+	jr nz, .CheckBadge
+	srl a
+	call c, BoostStat
+	ret
+
+BoostStat:
+; Raise stat at hl by 1/8.
+
+	ld a, [hli]
+	ld d, a
+	ld e, [hl]
+	srl d
+	rr e
+	srl d
+	rr e
+	srl d
+	rr e
+	ld a, [hl]
+	add e
+	ld [hld], a
+	ld a, [hl]
+	adc d
+	ld [hli], a
+
+; Cap at 999.
+	ld a, [hld]
+	sub LOW(MAX_STAT_VALUE)
+	ld a, [hl]
+	sbc HIGH(MAX_STAT_VALUE)
+	ret c
+	ld a, HIGH(MAX_STAT_VALUE)
+	ld [hli], a
+	ld a, LOW(MAX_STAT_VALUE)
+	ld [hld], a
+	ret
+
 _LoadBattleFontsHPBar:
 	callfar LoadBattleFontsHPBar
 	ret
@@ -6916,7 +6963,7 @@ FinishBattleAnim:
 	push hl
 	ld b, SCGB_BATTLE_COLORS
 	call GetSGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	call DelayFrame
 	pop hl
 	pop de
@@ -6935,6 +6982,7 @@ GiveExperiencePoints:
 	bit 0, a
 	ret nz
 
+	call .EvenlyDivideExpAmongParticipants
 	xor a
 	ld [wCurPartyMon], a
 	ld bc, wPartyMon1Species
@@ -7220,6 +7268,7 @@ GiveExperiencePoints:
 	ld [wApplyStatLevelMultipliersToEnemy], a
 	call ApplyStatLevelMultiplierOnAllStats
 	callfar ApplyStatusEffectOnPlayerStats
+	callfar BadgeStatBoosts
 	callfar UpdatePlayerHUD
 	call EmptyBattleTextbox
 	call LoadTilemapToTempTilemap
@@ -7301,6 +7350,40 @@ GiveExperiencePoints:
 
 .done
 	jp ResetBattleParticipants
+
+.EvenlyDivideExpAmongParticipants:
+; count number of battle participants
+	ld a, [wBattleParticipantsNotFainted]
+	ld b, a
+	ld c, PARTY_LENGTH
+	ld d, 0
+.count_loop
+	xor a
+	srl b
+	adc d
+	ld d, a
+	dec c
+	jr nz, .count_loop
+	cp 2
+	ret c
+
+	ld [wTempByteValue], a
+	ld hl, wEnemyMonBaseStats
+	ld c, wEnemyMonEnd - wEnemyMonBaseStats
+.base_stat_division_loop
+	xor a
+	ldh [hDividend + 0], a
+	ld a, [hl]
+	ldh [hDividend + 1], a
+	ld a, [wTempByteValue]
+	ldh [hDivisor], a
+	ld b, 2
+	call Divide
+	ldh a, [hQuotient + 3]
+	ld [hli], a
+	dec c
+	jr nz, .base_stat_division_loop
+	ret
 
 BoostExp:
 ; Multiply experience by 1.5x
@@ -8202,9 +8285,6 @@ ExitBattle:
 CleanUpBattleRAM:
 	call BattleEnd_HandleRoamMons
 	xor a
-   ld [wStatsScreenFlags], a
-	ld [wBattleTimeOfDay], a
-	ld [wBattleWeather], a
 	ld [wLowHealthAlarm], a
 	ld [wBattleMode], a
 	ld [wBattleType], a
@@ -8379,7 +8459,7 @@ _DisplayLinkRecord:
 	call WaitBGMap2
 	ld b, SCGB_DIPLOMA
 	call GetSGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	ld c, 8
 	call DelayFrames
 	call WaitPressAorB_BlinkCursor
@@ -8860,7 +8940,7 @@ InitBattleDisplay:
 	call HideSprites
 	ld b, SCGB_BATTLE_COLORS
 	call GetSGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	ld a, $90
 	ldh [hWY], a
 	xor a
@@ -8995,11 +9075,8 @@ BattleStartMessage:
 
 	farcall Battle_GetTrainerName
 
-	ld hl, WantToBattlePluralText
-	call IsPluralTrainer
-	jr z, .PlaceBattleStartText	
 	ld hl, WantsToBattleText
-	jr .PlaceBattleStartText
+	jr .PrintBattleStartText
 
 .wild
 	call BattleCheckEnemyShininess
@@ -9041,18 +9118,18 @@ BattleStartMessage:
 	farcall StubbedTrainerRankings_HookedEncounters
 
 	ld hl, HookedPokemonAttackedText
-	jr .PlaceBattleStartText
+	jr .PrintBattleStartText
 
 .NotFishing:
 	ld hl, PokemonFellFromTreeText
 	cp BATTLETYPE_TREE
-	jr z, .PlaceBattleStartText
+	jr z, .PrintBattleStartText
 	ld hl, WildCelebiAppearedText
 	cp BATTLETYPE_CELEBI
-	jr z, .PlaceBattleStartText
+	jr z, .PrintBattleStartText
 	ld hl, WildPokemonAppearedText
 
-.PlaceBattleStartText:
+.PrintBattleStartText:
 	push hl
 	farcall BattleStart_TrainerHuds
 	pop hl
@@ -9065,99 +9142,3 @@ BattleStartMessage:
 	farcall Mobile_PrintOpponentBattleMessage
 
 	ret
-
-GetWeatherImage:
-	ld a, [wBattleWeather]
-	and a
-	ret z
-	ld de, RainWeatherImage
-	lb bc, PAL_BATTLE_OB_BLUE, 4
-	cp WEATHER_RAIN
-	jr z, .done
-	ld de, SunWeatherImage
-	ld b, PAL_BATTLE_OB_YELLOW
-	cp WEATHER_SUN
-	jr z, .done
-	ld de, SandstormWeatherImage
-	ld b, PAL_BATTLE_OB_BROWN
-	cp WEATHER_SANDSTORM
-	ret nz
-	
-.done
-	push bc
-	ld b, BANK(WeatherImages) ; c = 4
-	ld hl, vTiles0
-	call Request2bpp
-	pop bc
-	ld hl, wShadowOAMSprite00
-	ld de, .WeatherImageOAMData
-.loop
-	ld a, [de]
-	inc de
-	ld [hli], a
-	ld a, [de]
-	inc de
-	ld [hli], a
-	dec c
-	ld a, c
-	ld [hli], a
-	ld a, b
-	ld [hli], a
-	jr nz, .loop
-	ret
-
-.WeatherImageOAMData
-; positions are backwards since
-; we load them in reverse order
-	db $88, $1c ; y/x - bottom right
-	db $88, $14 ; y/x - bottom left
-	db $80, $1c ; y/x - top right
-	db $80, $14 ; y/x - top left
-
-GetTimeOfDayImage:
-	ld a, [wTimeOfDay]
-	cp MORN_F
-	jr z, .DayImage
-	cp DAY_F
-	jr z, .DayImage
-	cp NITE_F
-	jr z, .NightImage
-.DayImage
- ld de, DayBattleImage
- lb bc, PAL_BATTLE_OB_YELLOW, 4
- jr .done	
-	
- .NightImage
- ld de, NightBattleImage
- lb bc, PAL_BATTLE_OB_BLUE, 4
-
-.done
-	push bc
-	ld b, BANK(TimeOfDayImages) ; c = 4
-	ld hl, vTiles0
-	call Request2bpp
-	pop bc
-	ld hl, wShadowOAMSprite00
-	ld de, .TimeOfDayImageOAMData
-.loop
-	ld a, [de]
-	inc de
-	ld [hli], a
-	ld a, [de]
-	inc de
-	ld [hli], a
-	dec c
-	ld a, c
-	ld [hli], a
-	ld a, b
-	ld [hli], a
-	jr nz, .loop
-	ret
-
-.TimeOfDayImageOAMData
-; positions are backwards since
-; we load them in reverse order
-	db $88, $1c ; y/x - bottom right
-	db $88, $14 ; y/x - bottom left
-	db $80, $1c ; y/x - top right
-	db $80, $14 ; y/x - top left
