@@ -21,6 +21,19 @@ DEF AUTO_INPUT EQU $ff
 	const TEMPMON    ; 3
 	const WILDMON    ; 4
 
+; wPokedexColor
+	const_def
+	const DEXCOLOR_RED
+	const DEXCOLOR_BLUE
+	const DEXCOLOR_PURPLE
+	const DEXCOLOR_BROWN
+	const DEXCOLOR_GREEN
+	const DEXCOLOR_PINK
+	const DEXCOLOR_YELLOW
+	const DEXCOLOR_CYAN
+    const DEXCOLOR_GRAY
+	const DEXCOLOR_MEWTWO
+
 ; wGameTimerPaused::
 DEF GAME_TIMER_PAUSED_F EQU 0
 DEF GAME_TIMER_MOBILE_F EQU 7

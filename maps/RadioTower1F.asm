@@ -82,7 +82,7 @@ RadioTower1FLuckyNumberManScript:
 	playsound SFX_2ND_PLACE
 	waitsfx
 	promptbutton
-	giveitem EXP_SHARE
+	giveitem LUCKY_EGG
 	iffalse .BagFull
 	itemnotify
 	setflag ENGINE_LUCKY_NUMBER_SHOW
@@ -235,7 +235,7 @@ RadioTower1FLuckyNumberManAskToPlayText:
 	done
 
 RadioTower1FLuckyNumberManThisWeeksIdIsText:
-	text "This week's ID"
+	text "Today's ID"
 	line "number is @"
 	text_ram wStringBuffer3
 	text "."
@@ -253,7 +253,7 @@ RadioTower1FLuckyNumberManDotDotDotText:
 
 RadioTower1FLuckyNumberManComeAgainText:
 	text "Please come back"
-	line "next week for the"
+	line "tomorrow for the"
 	cont "next LUCKY NUMBER."
 	done
 
@@ -275,8 +275,8 @@ RadioTower1FLuckyNumberManOkayMatchText:
 	cont "three numbers!"
 
 	para "You've won second"
-	line "prize, an EXP."
-	cont "SHARE!"
+	line "prize, a LUCKY"
+	cont "EGG!"
 	done
 
 RadioTower1FLuckyNumberManWeakMatchText:

@@ -130,8 +130,9 @@ wSpriteUpdatesEnabled:: db
 wUnusedScriptByte:: db
 
 wMapTimeOfDay:: db
-
-	ds 3
+wBattleTimeOfDay:: db
+wBattleTimeOfDayBackup:: db
+	ds 1
 
 wPrinterConnectionOpen:: db
 wPrinterOpcode:: db
@@ -551,6 +552,8 @@ wBattleWeather::
 ; 05 sunliight faded
 ; 06 sandstorm subsided
 	db
+wBattleWeatherBackup::
+   db
 
 wWeatherCount::
 ; # turns remaining
@@ -580,11 +583,7 @@ wLastEnemyMove:: db
 wPlayerFutureSightCount:: db
 wEnemyFutureSightCount:: db
 
-wGivingExperienceToExpShareHolders:: db
-
-wBackupEnemyMonBaseStats:: ds NUM_EXP_STATS
-wBackupEnemyMonCatchRate:: db
-wBackupEnemyMonBaseExp:: db
+	ds 8
 
 wPlayerFutureSightDamage:: dw
 wEnemyFutureSightDamage:: dw
@@ -739,14 +738,12 @@ wDexListingCursorBackup:: db
 wBackupDexListingCursor:: db
 wBackupDexListingPage:: db
 wDexCurLocation:: db
-if DEF(_CRYSTAL11)
 wPokedexStatus:: db
+wPokedexShinyToggle::
+; bit 0: set if displaying shiny palettes
+	db
 wPokedexDataEnd::
-else
-wPokedexDataEnd::
-	ds 1
-endc
-	ds 2
+ds 1
 
 NEXTU
 ; pokegear
@@ -1533,14 +1530,7 @@ wCreditsLYOverride:: db
 NEXTU
 ; pokedex
 wPrevDexEntryJumptableIndex:: db
-if DEF(_CRYSTAL11)
 wPrevDexEntryBackup:: db
-else
-; BUG: Crystal 1.0 reused the same byte in WRAM for
-; wPokedexStatus and wPrevDexEntryBackup.
-wPokedexStatus::
-wPrevDexEntryBackup:: db
-endc
 wUnusedPokedexByte:: db
 
 NEXTU
@@ -3024,14 +3014,14 @@ wPokegearFlags::
 	db
 wRadioTuningKnob:: db
 wLastDexMode:: db
-	ds 1
+wCurPokedexColor:: db ; current dex color
 wWhichRegisteredItem:: db
 wRegisteredItem:: db
 
 wPlayerState:: db
 
 wHallOfFameCount:: db
-	ds 1
+wExpShareToggle:: db
 wTradeFlags:: flag_array NUM_NPC_TRADES
 	ds 1
 wMooMooBerries:: db

@@ -40,6 +40,11 @@ WantsToBattleText::
 	line "wants to battle!"
 	prompt
 
+WantToBattlePluralText::
+	text "<ENEMY>"
+	line "want to battle!"
+	prompt
+
 BattleText_WildFled:
 	text "Wild @"
 	text_ram wEnemyMonNickname
@@ -145,6 +150,11 @@ BattleText_TheSandstormRages:
 	line "rages."
 	prompt
 
+BattleText_HailContinuesToFall:
+	text "Hail continues to"
+	line "fall."
+	prompt
+
 BattleText_TheRainStopped:
 	text "The rain stopped."
 	prompt
@@ -154,9 +164,13 @@ BattleText_TheSunlightFaded:
 	line "faded."
 	prompt
 
-BattleText_TheSandstormSubsided:
-	text "The SANDSTORM"
-	line "subsided."
+BattleText_TheHailStopped:
+	text "The hail stopped."
+	prompt
+
+BattleText_HailContinuesToFall:
+	text "Hail continues to"
+	line "fall."
 	prompt
 
 BattleText_EnemyMonFainted:
@@ -176,6 +190,11 @@ GotMoneyForWinningText:
 BattleText_EnemyWasDefeated:
 	text "<ENEMY>"
 	line "was defeated!"
+	prompt
+
+BattleText_PluralEnemyWereDefeated:
+	text "<ENEMY>"
+	line "were defeated!"
 	prompt
 
 TiedAgainstText:
@@ -229,6 +248,17 @@ LostAgainstText:
 BattleText_EnemyIsAboutToUseWillPlayerChangeMon:
 	text "<ENEMY>"
 	line "is about to use"
+	cont "@"
+	text_ram wEnemyMonNickname
+	text "."
+
+	para "Will <PLAYER>"
+	line "change #MON?"
+	done
+
+BattleText_PluralEnemyAreAboutToUseWillPlayerChangeMon:
+	text "<ENEMY>"
+	line "are about to use"
 	cont "@"
 	text_ram wEnemyMonNickname
 	text "."
@@ -689,6 +719,16 @@ AlreadyAsleepText:
 	line "already asleep!"
 	prompt
 
+AlreadyBurnedText:
+	text "<TARGET>'s"
+	line "already burned!"
+	prompt
+
+AlreadyFrozenText:
+	text "<TARGET>'s"
+	line "already frozen!"
+	prompt
+
 WasPoisonedText:
 	text "<TARGET>"
 	line "was poisoned!"
@@ -1106,3 +1146,13 @@ BattleText_NoTimeLeftToday: ; unreferenced
 	text "There is no time"
 	line "left today!"
 	done
+
+ItStartedToHailText:
+	text "It started"
+	line "to hail!"
+	prompt
+
+PeltedByHailText:
+	text "<USER>"
+	line "is pelted by HAIL!"
+	prompt

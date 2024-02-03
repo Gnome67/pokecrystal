@@ -58,7 +58,6 @@ INCLUDE "engine/pokemon/mon_menu.asm"
 INCLUDE "engine/overworld/select_menu.asm"
 INCLUDE "engine/events/elevator.asm"
 INCLUDE "engine/events/bug_contest/contest.asm"
-INCLUDE "engine/events/repel.asm"
 INCLUDE "engine/events/hidden_item.asm"
 INCLUDE "engine/events/std_collision.asm"
 INCLUDE "engine/events/bug_contest/judging.asm"
@@ -238,6 +237,7 @@ INCLUDE "engine/events/basement_key.asm"
 INCLUDE "engine/events/sacred_ash.asm"
 INCLUDE "engine/pokemon/tempmon.asm"
 INCLUDE "engine/pokemon/types.asm"
+INCLUDE "engine/pokemon/categories.asm"
 INCLUDE "engine/battle/getgen1trainerclassname.asm"
 INCLUDE "engine/pokemon/mon_stats.asm"
 INCLUDE "engine/link/init_list.asm"
@@ -682,6 +682,13 @@ SECTION "Crystal Events", ROMX
 INCLUDE "engine/events/battle_tower/load_trainer.asm"
 INCLUDE "engine/events/odd_egg.asm"
 
+SECTION "Battle Weather Images", ROMX
+
+INCLUDE "gfx/weather_images.asm"
+
+SECTION "Time Of Day Images", ROMX
+
+INCLUDE "gfx/timeofday_images.asm"
 
 SECTION "Stadium 2 Checksums", ROMX[$7DE0], BANK[$7F]
 

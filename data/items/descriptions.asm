@@ -25,7 +25,7 @@ ItemDescriptions:
 	dw FireStoneDesc
 	dw ThunderStoneDesc
 	dw WaterStoneDesc
-	dw TeruSama2Desc
+	dw PocketPCDesc
 	dw HPUpDesc
 	dw ProteinDesc
 	dw IronDesc
@@ -336,7 +336,7 @@ EscapeRopeDesc:
 
 RepelDesc:
 	db   "Repels weak #-"
-	next "MON for 100 steps.@"
+	next "MON.@"
 
 MaxElixerDesc:
 	db   "Fully restores the"
@@ -354,8 +354,9 @@ WaterStoneDesc:
 	db   "Evolves certain"
 	next "kinds of #MON.@"
 
-TeruSama2Desc:
-	db   "?@"
+PocketPCDesc:
+	db   "Access the PC"
+	next "right here!@"
 
 HPUpDesc:
 	db   "Raises the HP of"
@@ -423,11 +424,11 @@ GuardSpecDesc:
 
 SuperRepelDesc:
 	db   "Repels weak #-"
-	next "MON for 200 steps.@"
+	next "MON.@"
 
 MaxRepelDesc:
 	db   "Repels weak #-"
-	next "MON for 250 steps.@"
+	next "MON.@"
 
 DireHitDesc:
 	db   "Ups critical hit"
@@ -480,7 +481,7 @@ TeruSama5Desc:
 
 ExpShareDesc:
 	db   "Shares battle EXP."
-	next "Points. (HOLD)@"
+	next "Points.@"
 
 OldRodDesc:
 	db   "Use by water to"

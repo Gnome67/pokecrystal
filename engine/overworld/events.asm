@@ -873,13 +873,6 @@ CountStep:
 	farcall CheckSpecialPhoneCall
 	jr c, .doscript
 
-	; If Repel wore off, don't count the step.
-	call DoRepelStep
-	jr c, .doscript
-
-	; Count the step for poison and total steps
-	ld hl, wPoisonStepCount
-	inc [hl]
 	ld hl, wStepCount
 	inc [hl]
 	; Every 256 steps, increase the happiness of all your Pokemon.
@@ -902,17 +895,6 @@ CountStep:
 	; Increase the EXP of (both) DayCare Pokemon by 1.
 	farcall DayCareStep
 
-	; Every 4 steps, deal damage to all poisoned Pokemon.
-	ld hl, wPoisonStepCount
-	ld a, [hl]
-	cp 4
-	jr c, .skip_poison
-	ld [hl], 0
-
-	farcall DoPoisonStep
-	jr c, .doscript
-
-.skip_poison
 	farcall DoBikeStep
 
 .done
@@ -931,21 +913,6 @@ CountStep:
 
 .whiteout ; unreferenced
 	ld a, PLAYEREVENT_WHITEOUT
-	scf
-	ret
-
-DoRepelStep:
-	ld a, [wRepelEffect]
-	and a
-	ret z
-
-	dec a
-	ld [wRepelEffect], a
-	ret nz
-
-	ld a, BANK(RepelWoreOffScript)
-	ld hl, RepelWoreOffScript
-	call CallScript
 	scf
 	ret
 
