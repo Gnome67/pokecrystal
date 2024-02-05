@@ -514,9 +514,9 @@ LoadPalette_White_Col1_Col2_Black:
 	ldh [rSVBK], a
 
 ; A double-check to see whether Stat Pages 1, 2 or 3 are active, to make sure that palettes stay consistent when switching between pages and Pokemon, 
- set them to day palette to avoid graphical error. Assuming you added a fourth stats page, we skip the 0 check here due to the value's default state
- being 0, which causes inconsistent battle palette loading when on particular tiles due to memory overlap, but that's handled by the Stats Screen 
- initialization in the prior steps.
+; set them to day palette to avoid graphical error. Assuming you added a fourth stats page, we skip the 0 check here due to the value's default state
+; being 0, which causes inconsistent battle palette loading when on particular tiles due to memory overlap, but that's handled by the Stats Screen 
+; initialization in the prior steps.
 
  .StatsFlags
         ld a, [wStatsScreenFlags]

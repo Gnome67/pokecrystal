@@ -168,11 +168,6 @@ BattleText_TheHailStopped:
 	text "The hail stopped."
 	prompt
 
-BattleText_HailContinuesToFall:
-	text "Hail continues to"
-	line "fall."
-	prompt
-
 BattleText_EnemyMonFainted:
 	text "Enemy @"
 	text_ram wEnemyMonNickname

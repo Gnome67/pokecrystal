@@ -5848,7 +5848,7 @@ BattleCommand_Paralyze:
 	jp CallBattleCore
 
 .paralyzed
-	push h1
+	push hl
 	call AnimateFailedMove
 	pop hl
 	jp StdBattleTextbox
