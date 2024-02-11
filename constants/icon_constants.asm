@@ -1,7 +1,7 @@
 ; IconPointers indexes (see data/icon_pointers.asm)
 	const_def
 	const ICON_NULL
-		const ICON_BULBASAUR
+	const ICON_BULBASAUR
 	const ICON_IVYSAUR
 	const ICON_VENUSAUR
 	const ICON_CHARMANDER
@@ -264,3 +264,14 @@ DEF NUM_ICONS EQU const_value - 1
 	const MONICON_MOBILE1
 	const MONICON_MOBILE2
 	const MONICON_UNUSED
+
+; party menu icon palettes
+	const_def
+	const PAL_ICON_RED    ; 0
+	const PAL_ICON_BLUE   ; 1
+	const PAL_ICON_GREEN  ; 2
+	const PAL_ICON_BROWN  ; 3
+	const PAL_ICON_PINK   ; 4
+	const PAL_ICON_GRAY   ; 5
+	const PAL_ICON_YELLOW ; 6
+	const PAL_ICON_PURPLE ; 7

@@ -289,6 +289,10 @@ UpdateAnimFrame:
 	inc de
 	; fourth byte: attributes
 	; [de] = GetSpriteOAMAttr([hl])
+	ld a, [hl]
+	cp -1
+	jr z, .skip_attributes
+.skip_attributes
 	call GetSpriteOAMAttr
 	ld [de], a
 	inc hl
