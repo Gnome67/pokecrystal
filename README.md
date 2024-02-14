@@ -1,5 +1,9 @@
 ```This is a fork of pokecrystal, for my own personal use. The description provided below is from the original page, and has been left unmodified.```
 
+# Credits
+
+- Pokemon Icons: [LuigiTKO](https://twitter.com/LuigiTKO) and [GuiAbel](https://twitter.com/guiabel/)
+
 # Pokémon Crystal [![Build Status][ci-badge]][ci]
 
 This is a disassembly of Pokémon Crystal.

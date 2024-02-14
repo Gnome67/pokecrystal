@@ -227,7 +227,7 @@ GetMonSprite:
 
 .BreedMon2
 	ld a, [wBreedMon2Species]
-	d d, 2
+	ld d, 2
 
 .Mon:
 	ld e, a
